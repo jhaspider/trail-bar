@@ -2,8 +2,8 @@
   "manifest_version": 3,
   "name": "Trail Bar",
   "description": "Thin top bar with your most-visited links per site.",
-  "version": "0.1.0",
-  "permissions": ["storage", "tabs"],
+  "version": "0.1.1",
+  "permissions": ["storage", "tabs", "webNavigation"],
   "host_permissions": ["<all_urls>"],
   "background": {
     "service_worker": "src/background.ts",

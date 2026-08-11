@@ -8,5 +8,5 @@ export type LinkStats = {
 
 export type PortalStore = Record<string, Record<string, LinkStats>>;
 
-export type ToggleBarMessage = { type: 'TOGGLE_BAR' };
-export type ExtensionMessage = ToggleBarMessage;
+export type SetBarVisibleMessage = { type: 'SET_BAR_VISIBLE'; visible: boolean };
+export type ExtensionMessage = SetBarVisibleMessage;

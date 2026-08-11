@@ -1,7 +1,17 @@
 import type { LinkStats, PortalStore } from '../types';
 
 const STORAGE_KEY = 'trail-bar:portals';
+const VISIBLE_KEY = 'trail-bar:visible';
 const MIN_DWELL_MS = 1500;
+
+export async function getBarVisible(): Promise<boolean> {
+  const res = await chrome.storage.local.get(VISIBLE_KEY);
+  return Boolean(res[VISIBLE_KEY]);
+}
+
+export async function setBarVisible(visible: boolean): Promise<void> {
+  await chrome.storage.local.set({ [VISIBLE_KEY]: visible });
+}
 
 export async function loadStore(): Promise<PortalStore> {
   const res = await chrome.storage.local.get(STORAGE_KEY);

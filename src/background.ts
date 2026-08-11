@@ -1,5 +1,5 @@
 import { normalizeUrl, portalFor } from './lib/portal';
-import { recordVisit } from './lib/storage';
+import { getBarVisible, recordVisit, setBarVisible } from './lib/storage';
 
 type ActiveVisit = {
   url: string;
@@ -32,8 +32,27 @@ async function endVisit(tabId: number): Promise<void> {
 }
 
 async function endAllVisits(): Promise<void> {
-  const ids = Array.from(activeVisits.keys());
-  for (const id of ids) await endVisit(id);
+  for (const id of Array.from(activeVisits.keys())) await endVisit(id);
+}
+
+async function refreshVisit(tabId: number, nextUrl?: string): Promise<void> {
+  const tab = await chrome.tabs.get(tabId).catch(() => null);
+  if (!tab || !tab.url) return;
+  const url = normalizeUrl(nextUrl ?? tab.url);
+  const existing = activeVisits.get(tabId);
+  if (existing && existing.url === url) {
+    if (tab.title) existing.title = tab.title;
+    return;
+  }
+  await endVisit(tabId);
+  const portal = portalFor(url);
+  if (!portal) return;
+  activeVisits.set(tabId, {
+    url,
+    title: tab.title ?? '',
+    portal,
+    startedAt: Date.now(),
+  });
 }
 
 chrome.tabs.onActivated.addListener(async ({ tabId }) => {
@@ -45,8 +64,7 @@ chrome.tabs.onActivated.addListener(async ({ tabId }) => {
 
 chrome.tabs.onUpdated.addListener(async (tabId, info, tab) => {
   if (info.url && tab.active) {
-    await endVisit(tabId);
-    await startVisit(tabId);
+    await refreshVisit(tabId, info.url);
     return;
   }
   if (info.title) {
@@ -68,13 +86,30 @@ chrome.windows.onFocusChanged.addListener(async (windowId) => {
   if (activeTab?.id !== undefined) await startVisit(activeTab.id);
 });
 
+function onSpaNavigation(details: chrome.webNavigation.WebNavigationTransitionCallbackDetails): void {
+  if (details.frameId !== 0) return;
+  if (!activeVisits.has(details.tabId)) return;
+  void refreshVisit(details.tabId, details.url);
+}
+
+chrome.webNavigation.onHistoryStateUpdated.addListener(onSpaNavigation);
+chrome.webNavigation.onReferenceFragmentUpdated.addListener(onSpaNavigation);
+
 chrome.commands.onCommand.addListener(async (command) => {
   if (command !== 'toggle-bar') return;
-  const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-  if (tab?.id === undefined) return;
-  await chrome.tabs.sendMessage(tab.id, { type: 'TOGGLE_BAR' }).catch(() => {
-    // Content script not loaded (e.g., chrome:// pages) — silently ignore.
-  });
+  const next = !(await getBarVisible());
+  await setBarVisible(next);
+  const tabs = await chrome.tabs.query({});
+  await Promise.all(
+    tabs.map((tab) => {
+      if (tab.id === undefined) return Promise.resolve();
+      return chrome.tabs
+        .sendMessage(tab.id, { type: 'SET_BAR_VISIBLE', visible: next })
+        .catch(() => {
+          // Content script not loaded (e.g., chrome:// pages) — silently ignore.
+        });
+    }),
+  );
 });
 
 async function init(): Promise<void> {

@@ -15,9 +15,7 @@ export function portalFor(rawUrl: string | undefined | null): string | null {
 
 export function normalizeUrl(rawUrl: string): string {
   try {
-    const u = new URL(rawUrl);
-    u.hash = '';
-    return u.toString();
+    return new URL(rawUrl).toString();
   } catch {
     return rawUrl;
   }

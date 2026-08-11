@@ -1,6 +1,6 @@
 {
   "name": "trail-bar",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Chrome extension: thin top bar showing your most-visited links per site.",
   "type": "module",
