@@ -1,0 +1,29 @@
+{
+  "manifest_version": 3,
+  "name": "Trail Bar",
+  "description": "Thin top bar with your most-visited links per site.",
+  "version": "0.1.0",
+  "permissions": ["storage", "tabs"],
+  "host_permissions": ["<all_urls>"],
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content/content.ts"],
+      "css": ["src/content/bar.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  "commands": {
+    "toggle-bar": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+K",
+        "mac": "Command+Shift+K"
+      },
+      "description": "Toggle the Trail Bar"
+    }
+  }
+}
