@@ -3,6 +3,7 @@
   "name": "Trail Bar",
   "description": "Thin top bar with your most-visited links per site.",
   "version": "0.1.1",
+  "homepage_url": "https://github.com/jhaspider/trail-bar",
   "permissions": ["storage", "tabs", "webNavigation"],
   "host_permissions": ["<all_urls>"],
   "background": {

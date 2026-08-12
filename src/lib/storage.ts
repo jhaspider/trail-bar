@@ -53,3 +53,14 @@ export async function getPortalLinks(portal: string): Promise<Record<string, Lin
   const store = await loadStore();
   return store[portal] ?? {};
 }
+
+export async function flushAllPortals(): Promise<void> {
+  await chrome.storage.local.remove(STORAGE_KEY);
+}
+
+export async function flushPortal(portal: string): Promise<void> {
+  const store = await loadStore();
+  if (!(portal in store)) return;
+  delete store[portal];
+  await saveStore(store);
+}
