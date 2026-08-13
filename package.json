@@ -3,6 +3,16 @@
   "version": "0.1.1",
   "private": true,
   "description": "Chrome extension: thin top bar showing your most-visited links per site.",
+  "license": "MIT",
+  "author": "Amarjit Jha",
+  "homepage": "https://github.com/jhaspider/trail-bar",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jhaspider/trail-bar.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jhaspider/trail-bar/issues"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",
