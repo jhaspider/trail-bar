@@ -1,85 +1,208 @@
+/* ---------- shadow host ----------
+   The host is styled with !important both here and via inline styles from JS
+   so page CSS can't hide, resize, or reposition our container.
+
+   Text-related properties (font, color, letter/word-spacing, text-transform,
+   line-height) are set on :host so they cascade into the shadow tree from a
+   known baseline — anything inheritable from the page's <html> gets shadowed
+   by these values before it reaches our elements. */
+:host {
+  all: initial !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  max-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  transform: none !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+  contain: layout style;
+
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 400 !important;
+  font-style: normal !important;
+  font-variant: normal !important;
+  font-stretch: normal !important;
+  line-height: 1 !important;
+  letter-spacing: 0 !important;
+  word-spacing: 0 !important;
+  text-transform: none !important;
+  text-indent: 0 !important;
+  text-align: left !important;
+  direction: ltr !important;
+  color: #201e1d !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* ---------- root bar ---------- */
 #trail-bar-root {
-  display: block;
   width: 100%;
-  min-height: 32px;
-  background: #141414;
-  color: #eaeaea;
-  font: 12px/32px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  height: 100%;
+  background: #ffffff;
+  color: #201e1d;
+  font: inherit;
+  border: 0;
+  border-bottom: 2px solid #201e1d;
   box-sizing: border-box;
-  padding: 0 12px;
   white-space: nowrap;
-  overflow-x: auto;
-  overflow-y: hidden;
-  border-bottom: 1px solid #2a2a2a;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+#trail-bar-root *,
+#trail-bar-menu * {
+  box-sizing: border-box;
 }
 
 #trail-bar-root .trail-bar-inner {
   display: flex;
-  align-items: center;
-  gap: 14px;
-  height: 32px;
+  align-items: stretch;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
 }
 
+/* ---------- brand block (red) ---------- */
+#trail-bar-root .trail-bar-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 14px;
+  background: #ec3013;
+  color: #ffffff;
+  flex-shrink: 0;
+  height: 100%;
+  cursor: default;
+  transition: background-color 90ms linear;
+}
+#trail-bar-root .trail-bar-brand:hover {
+  background: #d62b11;
+}
+
+#trail-bar-root .trail-bar-mark {
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 3px;
+  width: 20px;
+  height: 20px;
+}
+
+#trail-bar-root .trail-bar-mark > span {
+  display: block;
+  height: 2px;
+  background: #ffffff;
+}
+#trail-bar-root .trail-bar-mark > span:nth-child(1) { width: 100%; }
+#trail-bar-root .trail-bar-mark > span:nth-child(2) { width: 78%; }
+#trail-bar-root .trail-bar-mark > span:nth-child(3) { width: 56%; opacity: 0.75; }
+#trail-bar-root .trail-bar-mark > span:nth-child(4) { width: 34%; opacity: 0.5; }
+
+/* ---------- portal chip ---------- */
+#trail-bar-root .trail-bar-portal {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 14px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #4a4644;
+  border-right: 2px solid #d7d3d3;
+  flex-shrink: 0;
+  height: 100%;
+}
+
+/* ---------- links ---------- */
+#trail-bar-root .trail-bar-links {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  padding: 0 16px;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  height: 100%;
+}
+
+#trail-bar-root .trail-bar-link {
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  max-width: 240px;
+  color: #201e1d;
+  font-weight: 400;
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex-shrink: 0;
+  transition: color 90ms linear;
+}
+
+#trail-bar-root .trail-bar-link:hover {
+  color: #ec3013;
+  text-decoration: none;
+}
+#trail-bar-root .trail-bar-link:active {
+  color: #b7240e;
+}
+
+#trail-bar-root .trail-bar-empty {
+  color: #8a8583;
+  font-style: normal;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+/* ---------- gear ---------- */
 #trail-bar-root .trail-bar-gear {
   all: unset;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
-  height: 22px;
-  border-radius: 4px;
-  color: #cfcfcf;
+  width: 44px;
+  height: 100%;
+  color: #4a4644;
   cursor: pointer;
   flex-shrink: 0;
-  padding-right: 10px;
-  border-right: 1px solid #333;
+  border-left: 2px solid #d7d3d3;
+  margin-left: auto;
+  transition: background-color 90ms linear, color 90ms linear;
 }
-
 #trail-bar-root .trail-bar-gear:hover {
-  background: #2a2a2a;
-  color: #ffffff;
+  background: #fbe0dc;
+  color: #b7240e;
+}
+#trail-bar-root .trail-bar-gear:focus-visible {
+  outline: 2px solid #ec3013;
+  outline-offset: -2px;
 }
 
-#trail-bar-root .trail-bar-label {
-  color: #999;
-  font-weight: 600;
-  padding-right: 10px;
-  border-right: 1px solid #333;
-  flex-shrink: 0;
-}
-
-#trail-bar-root .trail-bar-link {
-  color: #4ea1ff;
-  text-decoration: none;
-  max-width: 240px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  display: inline-block;
-  vertical-align: middle;
-  flex-shrink: 0;
-}
-
-#trail-bar-root .trail-bar-link:hover {
-  text-decoration: underline;
-  color: #7bb8ff;
-}
-
-#trail-bar-root .trail-bar-empty {
-  color: #888;
-  font-style: italic;
-}
-
+/* ---------- menu ---------- */
 #trail-bar-menu {
   position: fixed;
-  min-width: 220px;
-  background: #1c1c1c;
-  border: 1px solid #333;
-  border-radius: 6px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
-  padding: 4px 0;
-  z-index: 2147483647;
-  font: 12px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  min-width: 240px;
+  background: #ffffff;
+  color: #201e1d;
+  border: 2px solid #201e1d;
+  border-radius: 0;
+  box-shadow: 0 4px 0 rgba(32, 30, 29, 0.08);
+  padding: 0;
+  font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1;
 }
 
 #trail-bar-menu[hidden] {
@@ -89,16 +212,25 @@
 #trail-bar-menu .trail-bar-menu-item {
   all: unset;
   display: block;
-  padding: 8px 14px;
-  color: #eaeaea;
+  padding: 10px 14px;
+  color: #201e1d;
   cursor: pointer;
   white-space: nowrap;
   text-decoration: none;
   box-sizing: border-box;
   width: 100%;
+  border-bottom: 2px solid #eae7e7;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
-
+#trail-bar-menu .trail-bar-menu-item:last-child {
+  border-bottom: 0;
+}
 #trail-bar-menu .trail-bar-menu-item:hover {
-  background: #2a2a2a;
-  color: #ffffff;
+  background: #fbe0dc;
+  color: #b7240e;
+}
+#trail-bar-menu .trail-bar-menu-item:focus-visible {
+  outline: 2px solid #ec3013;
+  outline-offset: -2px;
 }

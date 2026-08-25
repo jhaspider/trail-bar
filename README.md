@@ -1,14 +1,17 @@
 # Trail Bar
 
+![Trail Bar promo](https://stramarjitme.blob.core.windows.net/images/processed/trailbar-promo-marquee-1400x560.webp)
+
 A minimal Chrome extension that surfaces your most-visited links per site in a thin, toggleable bar at the top of the page.
 
 Data stays on your device. No accounts, no servers, no analytics.
 
----
+## Creator
+[Amarjit Jha](https://amarjit.xyz)
 
 ## Features
 
-- **Per-site top links** — rankings are scoped to each site's registrable domain (e.g. `github.com`, `portal.azure.com`).
+- **Per-site top links** — rankings are scoped to each site's apex domain (e.g. `github.com`, `portal.azure.com`).
 - **Dwell-weighted ranking** — `visits × log(1 + avgDwellSeconds)`, so pages you actually read outrank drive-by clicks.
 - **Hotkey toggle** — `Ctrl+Shift+K` (`⌘+Shift+K` on macOS). Once on, the bar persists across page loads, navigations, and tabs until you toggle off.
 - **SPA-aware tracking** — detects in-page navigation on single-page apps (Azure Portal, Gmail, Notion, etc.) so each route counts as a distinct URL.
@@ -20,7 +23,7 @@ Data stays on your device. No accounts, no servers, no analytics.
 
 ### From the Chrome Web Store
 
-_Coming soon._
+[Install Trail Bar from the Chrome Web Store](https://chromewebstore.google.com/detail/poijehbdkcineacjbnbecmmabkakilac?utm_source=item-share-cb)
 
 ### From source
 
@@ -123,15 +126,21 @@ npm run typecheck    # tsc --noEmit
 ```
 src/
 ├── manifest.json        # MV3 manifest
-├── background.ts        # service worker: visit + dwell tracking, hotkey
+├── background.ts        # service worker: visit + dwell tracking,hotkey
+└── types.ts             # shared types
 ├── content/
 │   ├── content.ts       # bar + settings menu injected into the page
 │   └── bar.css
+├── icons/
+|   ├── icon-16.png
+|   ├── icon-32.png
+|   ├── icon-48.png
+|   └── icon-128.png
 ├── lib/
 │   ├── portal.ts        # eTLD+1 extraction, URL normalisation
 │   ├── ranking.ts       # scoring + top-N selection
 │   └── storage.ts       # chrome.storage.local wrapper
-└── types.ts             # shared types
+
 ```
 
 ### Tech stack

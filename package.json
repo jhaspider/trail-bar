@@ -17,11 +17,13 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:assets": "node scripts/build-assets.mjs"
   },
   "devDependencies": {
     "@crxjs/vite-plugin": "^2.0.0-beta.28",
     "@types/chrome": "^0.0.270",
+    "sharp": "^0.35.3",
     "typescript": "^5.5.4",
     "vite": "^5.4.6"
   },

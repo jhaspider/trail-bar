@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - 'release/**'
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment: chrome-web-store
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Extract version from branch name
+        id: version
+        run: |
+          BRANCH="${GITHUB_REF#refs/heads/}"
+          VERSION="${BRANCH#release/}"
+          if [ -z "$VERSION" ] || [ "$VERSION" = "$BRANCH" ]; then
+            echo "::error::Branch name '$BRANCH' does not match 'release/<version>'"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+
+      - name: Verify version matches manifest.json and package.json
+        run: |
+          MANIFEST_VERSION=$(node -p "require('./src/manifest.json').version")
+          PACKAGE_VERSION=$(node -p "require('./package.json').version")
+          BRANCH_VERSION="${{ steps.version.outputs.version }}"
+          if [ "$MANIFEST_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "::error::Branch version ($BRANCH_VERSION) != manifest.json version ($MANIFEST_VERSION)"
+            exit 1
+          fi
+          if [ "$PACKAGE_VERSION" != "$BRANCH_VERSION" ]; then
+            echo "::error::Branch version ($BRANCH_VERSION) != package.json version ($PACKAGE_VERSION)"
+            exit 1
+          fi
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm run build
+
+      - name: Package extension
+        working-directory: dist
+        run: zip -r "../trail-bar-${{ steps.version.outputs.version }}.zip" .
+
+      - name: Upload to Chrome Web Store
+        env:
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          npx --yes chrome-webstore-upload-cli@3 upload \
+            --source "trail-bar-${{ steps.version.outputs.version }}.zip" \
+            --extension-id "$CWS_EXTENSION_ID" \
+            --client-id "$CWS_CLIENT_ID" \
+            --client-secret "$CWS_CLIENT_SECRET" \
+            --refresh-token "$CWS_REFRESH_TOKEN"
+
+      # Remove this step if you want the release to sit as a draft in the
+      # dev console instead of being auto-submitted for review.
+      - name: Submit for review
+        env:
+          CWS_EXTENSION_ID: ${{ secrets.CWS_EXTENSION_ID }}
+          CWS_CLIENT_ID: ${{ secrets.CWS_CLIENT_ID }}
+          CWS_CLIENT_SECRET: ${{ secrets.CWS_CLIENT_SECRET }}
+          CWS_REFRESH_TOKEN: ${{ secrets.CWS_REFRESH_TOKEN }}
+        run: |
+          npx --yes chrome-webstore-upload-cli@3 publish \
+            --extension-id "$CWS_EXTENSION_ID" \
+            --client-id "$CWS_CLIENT_ID" \
+            --client-secret "$CWS_CLIENT_SECRET" \
+            --refresh-token "$CWS_REFRESH_TOKEN"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.version.outputs.version }}
+          name: v${{ steps.version.outputs.version }}
+          files: trail-bar-${{ steps.version.outputs.version }}.zip
+          generate_release_notes: true

@@ -7,53 +7,115 @@ import {
   getPortalLinks,
 } from '../lib/storage';
 import type { ExtensionMessage, LinkStats } from '../types';
+import barStyles from './bar.css?inline';
 
+const HOST_ID = 'trail-bar-host';
 const BAR_ID = 'trail-bar-root';
 const MENU_ID = 'trail-bar-menu';
 const TOP_N = 5;
-const BAR_HEIGHT_PX = 32;
+const BAR_HEIGHT_PX = 44;
+const BODY_OFFSET_ATTR = 'data-trail-bar-body-offset';
 const GEAR_SVG =
   '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path fill="currentColor" d="M19.14 12.94a7.49 7.49 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.03 7.03 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 13.88 2h-3.84a.5.5 0 0 0-.49.42l-.36 2.54c-.59.24-1.14.55-1.63.94l-2.39-.96a.5.5 0 0 0-.61.22L2.64 8.48a.5.5 0 0 0 .12.64L4.79 10.7a7.49 7.49 0 0 0 0 1.88L2.76 14.16a.5.5 0 0 0-.12.64l1.92 3.32a.5.5 0 0 0 .61.22l2.39-.96c.49.39 1.04.7 1.63.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .45-.18.49-.42l.36-2.54c.59-.24 1.14-.55 1.63-.94l2.39.96c.23.09.5 0 .61-.22l1.92-3.32a.5.5 0 0 0-.12-.64ZM12 15.5A3.5 3.5 0 1 1 15.5 12 3.5 3.5 0 0 1 12 15.5Z"/></svg>';
 
 let outsideClickHandler: ((e: MouseEvent) => void) | null = null;
 
+const HOST_INLINE_STYLE: ReadonlyArray<readonly [string, string]> = [
+  ['position', 'fixed'],
+  ['top', '0'],
+  ['left', '0'],
+  ['right', '0'],
+  ['width', '100%'],
+  ['height', `${BAR_HEIGHT_PX}px`],
+  ['min-height', `${BAR_HEIGHT_PX}px`],
+  ['max-height', `${BAR_HEIGHT_PX}px`],
+  ['margin', '0'],
+  ['padding', '0'],
+  ['transform', 'none'],
+  ['display', 'block'],
+  ['visibility', 'visible'],
+  ['opacity', '1'],
+  ['z-index', '2147483647'],
+  ['pointer-events', 'auto'],
+];
+
+function ensureHost(): { host: HTMLElement; shadow: ShadowRoot } {
+  let host = document.getElementById(HOST_ID) as HTMLElement | null;
+  if (!host) {
+    host = document.createElement('div');
+    host.id = HOST_ID;
+    document.documentElement.appendChild(host);
+  }
+  // Inline !important styles beat any page selector short of a matching inline rule,
+  // which the page can't inject onto our host.
+  for (const [prop, value] of HOST_INLINE_STYLE) {
+    host.style.setProperty(prop, value, 'important');
+  }
+  const shadow = host.shadowRoot ?? host.attachShadow({ mode: 'open' });
+  if (!shadow.querySelector('style[data-trail-bar]')) {
+    const style = document.createElement('style');
+    style.setAttribute('data-trail-bar', '');
+    style.textContent = barStyles;
+    shadow.appendChild(style);
+  }
+  return { host, shadow };
+}
+
 function ensureBar(): HTMLElement {
-  const existing = document.getElementById(BAR_ID);
-  if (existing) return existing;
-  const bar = document.createElement('div');
-  bar.id = BAR_ID;
-  const parent = document.body ?? document.documentElement;
-  parent.insertBefore(bar, parent.firstChild);
+  const { shadow } = ensureHost();
+  let bar = shadow.getElementById(BAR_ID) as HTMLElement | null;
+  if (!bar) {
+    bar = document.createElement('div');
+    bar.id = BAR_ID;
+    shadow.appendChild(bar);
+  }
   return bar;
+}
+
+function renderMark(): HTMLElement {
+  const mark = document.createElement('span');
+  mark.className = 'trail-bar-mark';
+  mark.setAttribute('aria-hidden', 'true');
+  for (let i = 0; i < 4; i += 1) mark.appendChild(document.createElement('span'));
+  return mark;
 }
 
 function renderInner(portal: string, links: LinkStats[]): HTMLElement {
   const inner = document.createElement('div');
   inner.className = 'trail-bar-inner';
 
-  inner.appendChild(renderGear(portal));
+  const brand = document.createElement('div');
+  brand.className = 'trail-bar-brand';
+  brand.title = 'Trailbar';
+  brand.setAttribute('aria-label', 'Trailbar');
+  brand.appendChild(renderMark());
+  inner.appendChild(brand);
 
-  const label = document.createElement('span');
-  label.className = 'trail-bar-label';
-  label.textContent = `Trailbar → ${portal}`;
-  inner.appendChild(label);
+  const portalEl = document.createElement('span');
+  portalEl.className = 'trail-bar-portal';
+  portalEl.textContent = portal;
+  inner.appendChild(portalEl);
 
+  const linksEl = document.createElement('div');
+  linksEl.className = 'trail-bar-links';
   if (links.length === 0) {
     const empty = document.createElement('span');
     empty.className = 'trail-bar-empty';
     empty.textContent = 'No visits yet — keep browsing.';
-    inner.appendChild(empty);
-    return inner;
+    linksEl.appendChild(empty);
+  } else {
+    for (const link of links) {
+      const a = document.createElement('a');
+      a.href = link.url;
+      a.className = 'trail-bar-link';
+      a.textContent = link.title || link.url;
+      a.title = `${link.title}\n${link.url}`;
+      linksEl.appendChild(a);
+    }
   }
+  inner.appendChild(linksEl);
 
-  for (const link of links) {
-    const a = document.createElement('a');
-    a.href = link.url;
-    a.className = 'trail-bar-link';
-    a.textContent = link.title || link.url;
-    a.title = `${link.title}\n${link.url}`;
-    inner.appendChild(a);
-  }
+  inner.appendChild(renderGear(portal));
 
   return inner;
 }
@@ -85,13 +147,14 @@ async function render(): Promise<void> {
 }
 
 function ensureMenu(): HTMLElement {
-  const existing = document.getElementById(MENU_ID);
-  if (existing) return existing;
-  const menu = document.createElement('div');
-  menu.id = MENU_ID;
-  menu.hidden = true;
-  const parent = document.body ?? document.documentElement;
-  parent.appendChild(menu);
+  const { shadow } = ensureHost();
+  let menu = shadow.getElementById(MENU_ID) as HTMLElement | null;
+  if (!menu) {
+    menu = document.createElement('div');
+    menu.id = MENU_ID;
+    menu.hidden = true;
+    shadow.appendChild(menu);
+  }
   return menu;
 }
 
@@ -138,20 +201,22 @@ function renderMenuItems(portal: string | null): HTMLElement {
 function positionMenu(gearBtn: HTMLElement): void {
   const menu = ensureMenu();
   const rect = gearBtn.getBoundingClientRect();
+  const menuWidth = menu.offsetWidth || 240;
+  const left = Math.max(4, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 4));
   menu.style.top = `${rect.bottom + 2}px`;
-  menu.style.left = `${rect.left}px`;
+  menu.style.left = `${left}px`;
 }
 
 function openMenu(gearBtn: HTMLElement, portal: string): void {
   const menu = renderMenuItems(portal || null);
-  positionMenu(gearBtn);
   menu.hidden = false;
+  positionMenu(gearBtn);
 
   outsideClickHandler = (e) => {
-    const target = e.target as Node | null;
-    if (!target) return;
-    if (menu.contains(target)) return;
-    if (gearBtn.contains(target)) return;
+    // Clicks inside a shadow root retarget e.target to the host, so use composedPath.
+    const path = e.composedPath();
+    if (path.includes(menu)) return;
+    if (path.includes(gearBtn)) return;
     closeMenu();
   };
   setTimeout(() => {
@@ -160,7 +225,8 @@ function openMenu(gearBtn: HTMLElement, portal: string): void {
 }
 
 function closeMenu(): void {
-  const menu = document.getElementById(MENU_ID);
+  const host = document.getElementById(HOST_ID);
+  const menu = host?.shadowRoot?.getElementById(MENU_ID);
   if (menu) menu.hidden = true;
   if (outsideClickHandler) {
     document.removeEventListener('click', outsideClickHandler, true);
@@ -169,7 +235,8 @@ function closeMenu(): void {
 }
 
 function toggleMenu(gearBtn: HTMLElement, portal: string): void {
-  const menu = document.getElementById(MENU_ID);
+  const host = document.getElementById(HOST_ID);
+  const menu = host?.shadowRoot?.getElementById(MENU_ID);
   if (menu && !menu.hidden) {
     closeMenu();
     return;
@@ -177,14 +244,30 @@ function toggleMenu(gearBtn: HTMLElement, portal: string): void {
   openMenu(gearBtn, portal);
 }
 
+function applyBodyOffset(): void {
+  const body = document.body;
+  if (!body) return;
+  if (body.hasAttribute(BODY_OFFSET_ATTR)) return;
+  const current = getComputedStyle(body).marginTop;
+  const currentPx = parseFloat(current) || 0;
+  body.setAttribute(BODY_OFFSET_ATTR, body.style.marginTop);
+  body.style.marginTop = `${currentPx + BAR_HEIGHT_PX}px`;
+}
+
+function restoreBodyOffset(): void {
+  const body = document.body;
+  if (!body || !body.hasAttribute(BODY_OFFSET_ATTR)) return;
+  const original = body.getAttribute(BODY_OFFSET_ATTR) ?? '';
+  body.style.marginTop = original;
+  body.removeAttribute(BODY_OFFSET_ATTR);
+}
+
 function shiftFixedSiblings(): void {
   const body = document.body;
   if (!body) return;
-  const bar = document.getElementById(BAR_ID);
   for (const child of Array.from(body.children)) {
     if (!(child instanceof HTMLElement)) continue;
-    if (child === bar) continue;
-    if (child.id === MENU_ID) continue;
+    if (child.id === HOST_ID) continue;
     if (child.dataset.trailBarShifted === '1') continue;
     const cs = getComputedStyle(child);
     if (cs.position !== 'fixed' && cs.position !== 'absolute') continue;
@@ -210,17 +293,16 @@ function restoreFixedSiblings(): void {
 
 async function show(): Promise<void> {
   await render();
-  ensureBar().classList.add('trail-bar-visible');
+  applyBodyOffset();
   shiftFixedSiblings();
 }
 
 function hide(): void {
   closeMenu();
-  const menu = document.getElementById(MENU_ID);
-  if (menu) menu.remove();
   restoreFixedSiblings();
-  const bar = document.getElementById(BAR_ID);
-  if (bar) bar.remove();
+  restoreBodyOffset();
+  const host = document.getElementById(HOST_ID);
+  if (host) host.remove();
 }
 
 async function applyVisibility(visible: boolean): Promise<void> {
